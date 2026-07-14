@@ -5,10 +5,10 @@
 # Sends the same JSON payload format as the FON Time Atack Interface
 # ============================================================
  
- 
+
 # --- Config (edit here) ---
 $backendUrl = "https://bcknd-fon-app.osnetpr.net/racelane/updateLast"
- 
+
 # --- Helpers ---
 function Read-Required($prompt) {
     while ($true) {
@@ -38,7 +38,7 @@ function Read-Number($prompt, [switch]$AsInt) {
         Write-Host "  Invalid number. Try again." -ForegroundColor Red
     }
 }
- 
+
 function Format-ElapsedTime([double]$totalSeconds) {
     if ($totalSeconds -lt 0) { $totalSeconds = 0 }
     $hours   = [int][Math]::Floor($totalSeconds / 3600)
@@ -50,7 +50,7 @@ function Format-ElapsedTime([double]$totalSeconds) {
     if ($ms -eq 1000) { $secInt++; $ms = 0 }
     return ('{0:D2}:{1:D2}:{2:D2}.{3:D3}' -f $hours, $minutes, $secInt, $ms)
 }
- 
+
 function Read-Time($prompt) {
     while ($true) {
         $val = (Read-Host $prompt).Trim()
@@ -58,13 +58,13 @@ function Read-Time($prompt) {
             Write-Host "  Value cannot be empty. Try again." -ForegroundColor Red
             continue
         }
- 
+
         # Plain seconds fallback: 3.137
         $plain = 0.0
         if ($val -notmatch ':' -and [double]::TryParse($val, [ref]$plain) -and $plain -ge 0) {
             return Format-ElapsedTime $plain
         }
- 
+
         # HH:MM:SS.MS — e.g. 00:00:03.137
         if ($val -match '^\d{1,2}:\d{1,2}:\d{1,2}(\.\d+)?$') {
             $parts   = $val -split ':'
@@ -82,7 +82,7 @@ function Read-Time($prompt) {
             $totalSec = ($hours * 3600) + ($minutes * 60) + $seconds
             return Format-ElapsedTime $totalSec
         }
- 
+
         Write-Host "  Invalid format. Use HH:MM:SS.MS (e.g. 00:00:03.137) or seconds (e.g. 3.137)" -ForegroundColor Red
     }
 }
@@ -120,9 +120,8 @@ while ($true) {
     Write-Host ""
     Write-Host "===  New Send  ===" -ForegroundColor Cyan
  
-    # Lane + Time
-    $lane    = Read-Lane
-    $speed = Read-Number "Speed (mph, e.g. 120)"
+    # Lane + Time (Speed is always 0)
+    $lane = Read-Lane
     $time = Read-Time "Time (seconds, e.g. 3.137)"
  
     # --- BUILD REQUEST (same format as v16) ---
@@ -131,10 +130,10 @@ while ($true) {
         'Authorization' = "Bearer $authKey"
     }
     $body = @{
-        'RorL'         = $lane.Code
-        'Speed' = [double]$speed
-        'Event'        = $eventID
-        'Time'         = $time
+        'RorL'  = $lane.Code
+        'Speed' = 0.0
+        'Event' = $eventID
+        'Time'  = $time
     }
     $jsonBody = $body | ConvertTo-Json
  
@@ -156,7 +155,7 @@ while ($true) {
  
         $sendCount++
         Write-Host "  [OK] Sent successfully  (total sent: $sendCount)" -ForegroundColor Green
- 
+
         if ($null -ne $response) {
             Write-Host "  Backend response:" -ForegroundColor DarkGray
             Write-Host "  $($response | ConvertTo-Json -Compress)" -ForegroundColor Gray
